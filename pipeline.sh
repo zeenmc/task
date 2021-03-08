@@ -7,7 +7,7 @@
 
 # Missing port options, without port(-p) application will not be accessible, 
 # We don't know on which port (80,443 or some other port) application is expecting traffic
-#Also I gave name for running container as is easier to work with names then with hash values
+#Also I give name for running container as is easier to work with names then with hash values
 
 docker run -d  --name qaauto -v qalogs:/qaauto/logs myproject/qaauto:latest
 
@@ -43,7 +43,6 @@ FILENAME=/var/lib/docker/volumes/qalogs/_data/qhauto-$(date +%Y-%m-%d).log
 
 function stopremove {
 docker stop qaauto
-docker container rm
 docker rmi qaauto:latest
 echo "Docker container is stopped, and image have been removed"
 exit
@@ -96,13 +95,11 @@ fi
 stopremove
 
 #Second part of the task
-###################################################################################################################################
-###################################################################################################################################
+#=====================================================================================================
 
+For this deployment I will use K8S workload CronJob, with Persistant Volume CLAME YAML files are below:
 
-For this deployment I will use K8S workload CronJob, YAML file is below:
-
-nano qaauto.yaml
+# nano qaauto.yaml
 
 apiVersion: batch/v1beta1
 kind: CronJob
@@ -119,12 +116,36 @@ spec:
             image: myproject/qaauto:latest
             imagePullPolicy: IfNotPresent
             command: ["/qhauto/runauto.sh"]
-          restartPolicy: OnFailure  
+            volumeMounts:
+              - name: qaauto
+                mountPath: /qaauto/logs
+          restartPolicy: OnFailure  #or maybe is better Never, as is for testing
+          volumes:
+              - name :qaauto
+                persistentVolumeClaim:
+                  claimName: qaauto-log-pvc
+
+
+#nano qaauto-log-pvc.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: qaauto
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
 
 
 # We will create CronJob with command from below
 
 kubectl apply -f qaauto.yaml
+
+#We will create PVC for container
+
+kubectl apply -f qaauto-log-pvc.yaml
 
 #To verify is it job created 
 
@@ -132,7 +153,7 @@ kubectl get cronjob qaauto
 
 #End when we want to remove this job, we can use command from below
 
+kubectl delete pvc qaauto-log-pvc.yaml
 kubectl delete cronjob qaauto
 
-###################################################################################################################################
-###################################################################################################################################
+#END
