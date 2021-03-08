@@ -7,7 +7,7 @@
 
 # Missing port options, without port(-p) application will not be accessible, 
 # We don't know on which port (80,443 or some other port) application is expecting traffic
-#Also I give name for running container as is easier to work with names then with hash values
+#Also I gave name for running container as is easier to work with names then with hash values
 
 docker run -d  --name qaauto -v qalogs:/qaauto/logs myproject/qaauto:latest
 
