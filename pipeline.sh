@@ -43,6 +43,7 @@ FILENAME=/var/lib/docker/volumes/qalogs/_data/qhauto-$(date +%Y-%m-%d).log
 
 function stopremove {
 docker stop qaauto
+docker container rm
 docker rmi qaauto:latest
 echo "Docker container is stopped, and image have been removed"
 exit
