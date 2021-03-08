@@ -6,13 +6,15 @@
 # docker pull myproject/qaauto:latest
 
 # Missing port options, without port(-p) application will not be accessible, 
-# We don't know on which port (80,443 or some other port) application is expecting traffic.
-#Also I gave name for running container as is easier to work with names then with hash values
+# We don't know on which port (80,443 or some other port) application is expecting traffic
+#Also I give name for running container as is easier to work with names then with hash values
 
 docker run -d  --name qaauto -v qalogs:/qaauto/logs myproject/qaauto:latest
 
 # I assumed host has public ip address
 # with cURL command we will fetch host's public ip address, 
+# in case of private ip address, we will use regularex to find output
+# from ifconfig or ip add show
 
 QUAATO_IP=curl ifconfig.me
 
@@ -71,11 +73,11 @@ echo "Size of log file: $FILENAME is $FILESIZE byte"
 if [ "$FILESIZE" -eq "0" ]
 
 then
-     echo "Log file is empty, TEST FAILED!!!, "
+     echo "file is empty, TEST FAILED!!!, "
      stopremove
 
 else
-     echo "Log file is NOT empty"
+     echo "file is NOT empty"
 fi
 
 
@@ -91,3 +93,40 @@ fi
 
 #END OF THE SCRIPT
 stopremove
+
+#Second part of the task
+#=====================================================================================================
+
+For this deployment I will use K8S workload CronJob, YAML file is below:
+
+# nano qaauto.yaml
+
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: qaauto
+spec:
+  schedule: "* 2 * * *"    ## Every night at 2AM
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: qaauto
+            image: myproject/qaauto:latest
+            imagePullPolicy: IfNotPresent
+            command: ["/qhauto/runauto.sh"]
+          restartPolicy: OnFailure  
+
+
+# We will create CronJob with command from below
+
+kubectl apply -f qaauto.yaml
+
+#To verify is it job created 
+
+kubectl get cronjob qaauto
+
+#End when we want to remove this job, we can use command from below
+
+kubectl delete cronjob qaauto
