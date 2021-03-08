@@ -100,6 +100,18 @@ stopremove
 
 For this deployment I will use K8S workload CronJob, with Persistant Volume CLAME YAML files are below:
 
+#nano qaauto-log-pvc.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: qaauto
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+
 # nano qaauto.yaml
 
 apiVersion: batch/v1beta1
@@ -122,22 +134,9 @@ spec:
                 mountPath: /qaauto/logs
           restartPolicy: OnFailure  #or maybe is better Never, as is for testing
           volumes:
-              - name :qaauto
+              - name: qaauto
                 persistentVolumeClaim:
                   claimName: qaauto-log-pvc
-
-
-#nano qaauto-log-pvc.yaml
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: qaauto
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 1Gi
 
 
 # We will create CronJob with command from below
